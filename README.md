@@ -30,7 +30,7 @@ To build `xdgctl`, you need the following development libraries:
 
 ```bash
 # On Void Linux
-sudo xbps-install glibc-devel
+sudo xbps-install glibc-devel pkg-config
 ```
 
 ## Installation

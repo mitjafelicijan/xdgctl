@@ -2,6 +2,8 @@
 
 Built with C using [GLib/GIO](https://docs.gtk.org/gio/) and [termbox2](https://github.com/termbox/termbox2).
 
+https://github.com/user-attachments/assets/076c9934-f373-486d-9595-eec480e3a429
+
 ## Features
 
 - Browse by category (Browsers, Text Editors, etc.)

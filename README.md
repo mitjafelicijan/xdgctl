@@ -8,7 +8,6 @@ https://github.com/user-attachments/assets/076c9934-f373-486d-9595-eec480e3a429
 
 - Browse by category (Browsers, Text Editors, etc.)
 - Current default marked with `*`
-- Minimal dependencies
 
 ## Navigation & Controls
 

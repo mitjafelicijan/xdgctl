@@ -36,7 +36,7 @@ sudo xbps-install glibc-devel
 ## Installation
 
 ```bash
-git clone https://github.com/mitjafelician/xdgctl.git
+git clone https://github.com/mitjafelicijan/xdgctl.git
 cd xdgctl
 
 # Build

@@ -201,12 +201,16 @@ void draw(State *state) {
 	draw_categories(state);
 	draw_apps_list(state);
 
-	if (state->message[0] != '\0') {
+	if (state->message[0] != '\0' || state->is_dev_mode) {
 		uint16_t msg_col = COLOR_SUCCESS;
-		if (strncmp(state->message, "Failed", 6) == 0) {
+		const char *msg = state->message;
+		if (state->message[0] == '\0' && state->is_dev_mode) {
+			msg = "Developer Mode";
+		}
+		if (strncmp(msg, "Failed", 6) == 0) {
 			msg_col = COLOR_ERROR;
 		}
-		tb_print(X_OFF_CATEGORIES, tb_height() - 1, msg_col, COLOR_BG, state->message);
+		tb_print(X_OFF_CATEGORIES, tb_height() - 1, msg_col, COLOR_BG, msg);
 	}
 
 	tb_present();

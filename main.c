@@ -33,9 +33,30 @@ typedef struct {
 	int col; // 0 for category, 1 for app
 	char message[512];
 	GList *cached_apps;
+	int is_dev_mode;
+	int dev_count;
 } State;
 
-GList *get_apps_for_category(int category_idx) {
+int get_category_count(State *state) {
+	if (state->is_dev_mode) {
+		return state->dev_count;
+	}
+	int count = 0;
+	while (categories[count].name)
+		count++;
+	return count;
+}
+
+const char *get_category_name(State *state, int idx) {
+	if (state->is_dev_mode) {
+		static char mock_name[64];
+		snprintf(mock_name, sizeof(mock_name), "Dev Category %d", idx + 1);
+		return mock_name;
+	}
+	return categories[idx].name;
+}
+
+GList *get_apps_for_category(State *state, int category_idx) {
 	GList *apps = NULL;
 	for (int m = 0; categories[category_idx].mimetypes[m] != NULL; ++m) {
 		GList *type_apps = g_app_info_get_all_for_type(categories[category_idx].mimetypes[m]);
@@ -58,10 +79,21 @@ GList *get_apps_for_category(int category_idx) {
 }
 
 void update_cached_apps(State *state) {
-	if (state->cached_apps) {
+	if (state->cached_apps && !state->is_dev_mode) {
 		g_list_free_full(state->cached_apps, g_object_unref);
+	} else if (state->cached_apps && state->is_dev_mode) {
+		g_list_free_full(state->cached_apps, g_free);
 	}
-	state->cached_apps = get_apps_for_category(state->category_idx);
+	state->cached_apps = NULL;
+
+	if (state->is_dev_mode) {
+		for (int i = 0; i < state->dev_count; ++i) {
+			char *mock_app = g_strdup_printf("Dev Application %d.%d", state->category_idx + 1, i + 1);
+			state->cached_apps = g_list_append(state->cached_apps, mock_app);
+		}
+	} else {
+		state->cached_apps = get_apps_for_category(state, state->category_idx);
+	}
 	state->app_idx = 0;
 }
 
@@ -72,7 +104,8 @@ void draw_titles() {
 }
 
 void draw_categories(State *state) {
-	for (int i = 0; categories[i].name != NULL; ++i) {
+	int count = get_category_count(state);
+	for (int i = 0; i < count; ++i) {
 		uint16_t fg = COLOR_DEFAULT;
 		uint16_t bg = TB_DEFAULT;
 		if (state->col == 0 && state->category_idx == i) {
@@ -81,11 +114,26 @@ void draw_categories(State *state) {
 			fg = COLOR_SELECTED;
 			bg = COLOR_DEFAULT;
 		}
-		tb_print(X_OFF_CATEGORIES, Y_OFF_START + i, fg, bg, categories[i].name);
+		tb_print(X_OFF_CATEGORIES, Y_OFF_START + i, fg, bg, get_category_name(state, i));
 	}
 }
 
 void draw_apps_list(State *state) {
+	if (state->is_dev_mode) {
+		int i = 0;
+		for (GList *l = state->cached_apps; l != NULL; l = l->next, ++i) {
+			char *app_name = (char *)l->data;
+			uint16_t fg = COLOR_DEFAULT;
+			uint16_t bg = TB_DEFAULT;
+			if (state->col == 1 && state->app_idx == i) {
+				bg = COLOR_SELECTED;
+			}
+			char name[256];
+			snprintf(name, sizeof(name), "  %s", app_name);
+			tb_print(X_OFF_APPS, Y_OFF_START + i, fg, bg, name);
+		}
+		return;
+	}
 	GList *defaults = NULL;
 	for (int m = 0; categories[state->category_idx].mimetypes[m] != NULL; ++m) {
 		GAppInfo *d = g_app_info_get_default_for_type(categories[state->category_idx].mimetypes[m], FALSE);
@@ -158,7 +206,15 @@ int main() {
 		return 1;
 	}
 
-	State state = {0, 0, 0, {0}, NULL};
+	State state = {0, 0, 0, {0}, NULL, 0, 0};
+	char *dev_env = getenv("XDGCTL_DEV");
+	if (dev_env) {
+		state.is_dev_mode = 1;
+		state.dev_count = atoi(dev_env);
+		if (state.dev_count <= 0)
+			state.dev_count = 10;
+	}
+
 	update_cached_apps(&state);
 
 	struct tb_event ev;
@@ -186,9 +242,7 @@ int main() {
 				}
 			} else if (ev.key == TB_KEY_ARROW_DOWN) {
 				if (state.col == 0) {
-					int count = 0;
-					while (categories[count].name)
-						count++;
+					int count = get_category_count(&state);
 					if (state.category_idx < count - 1) {
 						state.category_idx++;
 						update_cached_apps(&state);
@@ -212,18 +266,27 @@ int main() {
 				}
 			} else if (ev.key == TB_KEY_ENTER) {
 				if (state.col == 1) {
-					GAppInfo *selected_app = (GAppInfo *)g_list_nth_data(state.cached_apps, state.app_idx);
-					if (selected_app) {
-						snprintf(state.message, sizeof(state.message),
-								 "%s is now default %s",
-								 g_app_info_get_name(selected_app), categories[state.category_idx].name);
-						for (int m = 0; categories[state.category_idx].mimetypes[m] != NULL; ++m) {
-							GError *error = NULL;
-							g_app_info_set_as_default_for_type(selected_app, categories[state.category_idx].mimetypes[m], &error);
-							if (error) {
-								snprintf(state.message, sizeof(state.message), "Failed to set default application");
-								g_error_free(error);
-								break;
+					if (state.is_dev_mode) {
+						char *selected_app = (char *)g_list_nth_data(state.cached_apps, state.app_idx);
+						if (selected_app) {
+							snprintf(state.message, sizeof(state.message),
+									 "Mock: %s is now default for %s",
+									 selected_app, get_category_name(&state, state.category_idx));
+						}
+					} else {
+						GAppInfo *selected_app = (GAppInfo *)g_list_nth_data(state.cached_apps, state.app_idx);
+						if (selected_app) {
+							snprintf(state.message, sizeof(state.message),
+									 "%s is now default %s",
+									 g_app_info_get_name(selected_app), categories[state.category_idx].name);
+							for (int m = 0; categories[state.category_idx].mimetypes[m] != NULL; ++m) {
+								GError *error = NULL;
+								g_app_info_set_as_default_for_type(selected_app, categories[state.category_idx].mimetypes[m], &error);
+								if (error) {
+									snprintf(state.message, sizeof(state.message), "Failed to set default application");
+									g_error_free(error);
+									break;
+								}
 							}
 						}
 					}
@@ -232,8 +295,10 @@ int main() {
 		}
 	}
 
-	if (state.cached_apps) {
+	if (state.cached_apps && !state.is_dev_mode) {
 		g_list_free_full(state.cached_apps, g_object_unref);
+	} else if (state.cached_apps && state.is_dev_mode) {
+		g_list_free_full(state.cached_apps, g_free);
 	}
 	tb_shutdown();
 	return 0;

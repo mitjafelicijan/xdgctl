@@ -30,6 +30,8 @@
 typedef struct {
 	int category_idx;
 	int app_idx;
+	int category_offset;
+	int app_offset;
 	int col; // 0 for category, 1 for app
 	char message[512];
 	GList *cached_apps;
@@ -105,27 +107,32 @@ void draw_titles() {
 
 void draw_categories(State *state) {
 	int count = get_category_count(state);
-	for (int i = 0; i < count; ++i) {
+	int height = tb_height() - Y_OFF_START - 1;
+	for (int i = 0; i < height && (i + state->category_offset) < count; ++i) {
+		int idx = i + state->category_offset;
 		uint16_t fg = COLOR_DEFAULT;
 		uint16_t bg = TB_DEFAULT;
-		if (state->col == 0 && state->category_idx == i) {
+		if (state->col == 0 && state->category_idx == idx) {
 			bg = COLOR_SELECTED;
-		} else if (state->category_idx == i) {
+		} else if (state->category_idx == idx) {
 			fg = COLOR_SELECTED;
 			bg = COLOR_DEFAULT;
 		}
-		tb_print(X_OFF_CATEGORIES, Y_OFF_START + i, fg, bg, get_category_name(state, i));
+		tb_print(X_OFF_CATEGORIES, Y_OFF_START + i, fg, bg, get_category_name(state, idx));
 	}
 }
 
 void draw_apps_list(State *state) {
+	int height = tb_height() - Y_OFF_START - 1;
 	if (state->is_dev_mode) {
 		int i = 0;
-		for (GList *l = state->cached_apps; l != NULL; l = l->next, ++i) {
+		GList *l = g_list_nth(state->cached_apps, state->app_offset);
+		for (; l != NULL && i < height; l = l->next, ++i) {
+			int idx = i + state->app_offset;
 			char *app_name = (char *)l->data;
 			uint16_t fg = COLOR_DEFAULT;
 			uint16_t bg = TB_DEFAULT;
-			if (state->col == 1 && state->app_idx == i) {
+			if (state->col == 1 && state->app_idx == idx) {
 				bg = COLOR_SELECTED;
 			}
 			char name[256];
@@ -154,11 +161,13 @@ void draw_apps_list(State *state) {
 	}
 
 	int i = 0;
-	for (GList *l = state->cached_apps; l != NULL; l = l->next, ++i) {
+	GList *l = g_list_nth(state->cached_apps, state->app_offset);
+	for (; l != NULL && i < height; l = l->next, ++i) {
+		int idx = i + state->app_offset;
 		GAppInfo *app = (GAppInfo *)l->data;
 		uint16_t fg = COLOR_DEFAULT;
 		uint16_t bg = TB_DEFAULT;
-		if (state->col == 1 && state->app_idx == i) {
+		if (state->col == 1 && state->app_idx == idx) {
 			bg = COLOR_SELECTED;
 		}
 
@@ -206,7 +215,7 @@ int main() {
 		return 1;
 	}
 
-	State state = {0, 0, 0, {0}, NULL, 0, 0};
+	State state = {0, 0, 0, 0, 0, {0}, NULL, 0, 0};
 	char *dev_env = getenv("XDGCTL_DEV");
 	if (dev_env) {
 		state.is_dev_mode = 1;
@@ -219,6 +228,18 @@ int main() {
 
 	struct tb_event ev;
 	while (1) {
+		int visible_height = tb_height() - Y_OFF_START - 1;
+		if (state.category_idx < state.category_offset) {
+			state.category_offset = state.category_idx;
+		} else if (state.category_idx >= state.category_offset + visible_height) {
+			state.category_offset = state.category_idx - visible_height + 1;
+		}
+		if (state.app_idx < state.app_offset) {
+			state.app_offset = state.app_idx;
+		} else if (state.app_idx >= state.app_offset + visible_height) {
+			state.app_offset = state.app_idx - visible_height + 1;
+		}
+
 		draw(&state);
 		tb_poll_event(&ev);
 
@@ -232,6 +253,7 @@ int main() {
 					if (state.category_idx > 0) {
 						state.category_idx--;
 						update_cached_apps(&state);
+						state.app_offset = 0;
 						state.message[0] = '\0';
 					}
 				} else {
@@ -246,6 +268,7 @@ int main() {
 					if (state.category_idx < count - 1) {
 						state.category_idx++;
 						update_cached_apps(&state);
+						state.app_offset = 0;
 						state.message[0] = '\0';
 					}
 				} else {
@@ -259,6 +282,7 @@ int main() {
 				if (state.col == 0) {
 					state.col = 1;
 					state.app_idx = 0;
+					state.app_offset = 0;
 				}
 			} else if (ev.key == TB_KEY_ARROW_LEFT) {
 				if (state.col == 1) {

@@ -58,14 +58,16 @@ If you manually add new applications to your `~/.local/share/applications` direc
 [![xdgctl-git on AUR](https://img.shields.io/aur/version/xdgctl-git?label=xdgctl-git)](https://aur.archlinux.org/packages/xdgctl-git/)
 
 xdgctl is available on the [AUR](https://wiki.archlinux.org/index.php/Arch_User_Repository):
+
 - [xdgctl](https://aur.archlinux.org/packages/xdgctl/) (release package)
 - [xdgctl-git](https://aur.archlinux.org/packages/xdgctl-git/) (git package)
 
 You can install it using your [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers) of choice.
 
 Example:
+
 ```console
-$ yay -Sy xdgctl
+yay -Sy xdgctl
 ```
 
 ## More about XDG

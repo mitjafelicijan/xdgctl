@@ -109,6 +109,7 @@ MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme
 ```
 
 ### Other useful commands/files
+
 ```bash
 update-desktop-database ~/.local/share/applications
 less ~/.config/mimeapps.list

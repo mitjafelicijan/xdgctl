@@ -35,6 +35,8 @@ sudo xbps-install glibc-devel pkg-config
 
 ## Installation
 
+### From source
+
 ```bash
 git clone https://github.com/mitjafelicijan/xdgctl.git
 cd xdgctl
@@ -49,6 +51,24 @@ make PREFIX=~/.local install
 ```
 
 If you manually add new applications to your `~/.local/share/applications` directory, you might need to run `update-desktop-database` again.
+
+### Arch Linux package
+
+[![xdgctl on AUR](https://img.shields.io/aur/version/xdgctl?label=xdgctl)](https://aur.archlinux.org/packages/xdgctl/)
+[![xdgctl-git on AUR](https://img.shields.io/aur/version/xdgctl-git?label=xdgctl-git)](https://aur.archlinux.org/packages/xdgctl-git/)
+
+xdgctl is available on the [AUR](https://wiki.archlinux.org/index.php/Arch_User_Repository):
+
+- [xdgctl](https://aur.archlinux.org/packages/xdgctl/) (release package)
+- [xdgctl-git](https://aur.archlinux.org/packages/xdgctl-git/) (git package)
+
+You can install it using your [AUR helper](https://wiki.archlinux.org/index.php/AUR_helpers) of choice.
+
+Example:
+
+```console
+yay -Sy xdgctl
+```
 
 ## More about XDG
 
@@ -89,6 +109,7 @@ MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme
 ```
 
 ### Other useful commands/files
+
 ```bash
 update-desktop-database ~/.local/share/applications
 less ~/.config/mimeapps.list

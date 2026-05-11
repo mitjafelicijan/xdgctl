@@ -1,6 +1,8 @@
-`xdgctl` is a TUI for managing XDG default applications. View and set defaults for file categories without using `xdg-mime` directly.
+`xdgctl` is a TUI for managing XDG default applications. View and set defaults
+for file categories without using `xdg-mime` directly.
 
-Built with C using [GLib/GIO](https://docs.gtk.org/gio/) and [termbox2](https://github.com/termbox/termbox2).
+Built with C using [GLib/GIO](https://docs.gtk.org/gio/) and
+[termbox2](https://github.com/termbox/termbox2).
 
 https://github.com/user-attachments/assets/076c9934-f373-486d-9595-eec480e3a429
 
@@ -50,7 +52,8 @@ sudo make PREFIX=/usr/local install
 make PREFIX=~/.local install
 ```
 
-If you manually add new applications to your `~/.local/share/applications` directory, you might need to run `update-desktop-database` again.
+If you manually add new applications to your `~/.local/share/applications`
+directory, you might need to run `update-desktop-database` again.
 
 ### Arch Linux package
 
@@ -96,17 +99,33 @@ xdg-mime default brave.desktop x-scheme-handler/http
 xdg-mime default brave.desktop x-scheme-handler/https
 ```
 
-### Desktop Entry example
+### Example Desktop Entry for Brave
 
 ```ini
 # ~/.local/share/applications/brave.desktop
 [Desktop Entry]
-Exec=/home/m/Applications/brave
+Version=1.0
 Type=Application
-Categories=Applications
-Name=Brave Browser
-MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+Name=Brave
+GenericName=Web Browser
+Comment=Brave browser
+Exec=/home/m/Applications/brave --new-window %U
+Terminal=false
+Icon=brave
+Categories=Network;WebBrowser;
+MimeType=application/pdf;application/rdf+xml;application/rss+xml;application/xhtml+xml;application/xhtml_xml;application/xml;image/gif;image/jpeg;image/png;image/webp;text/html;text/xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/chromium;
+Actions=new-window;new-private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=/home/m/Applications/brave --new-window
+
+[Desktop Action new-private-window]
+Name=New Private Window
+Exec=/home/m/Applications/brave --incognito
 ```
+
+Validate file with `desktop-file-validate ~/.local/share/applications/brave.desktop`.
 
 ### Other useful commands/files
 
